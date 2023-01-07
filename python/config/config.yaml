@@ -1,0 +1,7 @@
+SETTING:
+  MODEL_DIR: '../models/'
+  LOG_DIR: '../log/'
+  SUBMISSION_DIR: '../data/submission/'
+  RAW_DATA_DIR: '../data/raw/'
+  FEATURE_DIR: '../data/features/'
+  
