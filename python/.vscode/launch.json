@@ -1,0 +1,12 @@
+{
+    "version": "1.0.0",
+    "configurations": [        
+        {
+            "name": "Python ML Competiotion",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "internalConsole"
+        }
+    ]
+}
