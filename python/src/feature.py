@@ -15,59 +15,31 @@ import re
 import time
 
 
-# def get_feature_logger(log_filename:str) -> logging.Logger:
-#     """
-#     setting logger
-#     """
-#     # setteing log stream handler
-#     stream_handler = StreamHandler()
-#     stream_handler.setLevel(DEBUG)
-#     stream_handler.setFormatter(Formatter("%(message)s"))
-#     # settting log file handler
-#     file_handler = FileHandler(
-#         log_filename
-#     )
-#     file_handler.setLevel(DEBUG)
-#     file_handler.setFormatter(
-#         Formatter("%(asctime)s [%(levelname)7s] (%(name)s) %(message)s")
-#     )
-#     # setting root logger
-#     logging.basicConfig(level=NOTSET, handlers=[stream_handler, file_handler])
-
-#     # create logger
-#     logger = logging.getLogger(__name__)
-
-#     logger.info("-"*100)
-#     logger.info("start creating feature values")
-
-#     return logger
-
-
 """
-basic class for getting feature parameter
+特徴量を取得するための基本クラス
 """
 class Feature(metaclass=ABCMeta):
     """
-    basic class for getting feature parameter
+    特徴量の基本クラス
     """
 
-    dir = '../data/features/' # default directroy
+    dir = '../data/features/' # 保存ベースディレクトリ
 
     def __init__(self, train=None, test=None) -> None:
-        # self.logger = logging.getLogger(self.__class__.__name__)
         self.logger = Logger('feature')
 
         self.name = re.sub("([A-Z])", lambda m: "_" + m.group(1).lower(), self.__class__.__name__).lstrip('_')
         self.logger.debug(f"{self.__class__.__name__} -> {self.name}")
 
-        self.train = train
-        self.test = test
+        # データを結合して保存
+        self.all = pd.concat(train, test, sort=False).reset_index(drop=True)
 
+        # 特徴量保存パス
         self.train_csv_path = Path(self.dir) / f"{self.name}_train.csv"
         self.test_csv_path = Path(self.dir) / f"{self.name}_test.csv"
 
-        # if csv files exist, load the features from CSV files
-        if self.check_csv():
+        # 既にcsvファイルが存在すればcsvを特徴量として読み込む
+        if self.is_exist_csv():
             self.feature_train = pd.DataFrame()
             self.feature_test = pd.DataFrame()
             self.load_csv()
@@ -78,7 +50,7 @@ class Feature(metaclass=ABCMeta):
     @contextmanager
     def timer(self):
         """
-        timer for mesuring execute time
+        実行時間取得用Timer
         """ 
         t0 = time.time()
         self.logger.info(f"[{self.name}] start!")
@@ -88,13 +60,13 @@ class Feature(metaclass=ABCMeta):
     @abstractmethod
     def create_feature(self):
         """
-        abstract method for creating feature values
+        特徴量生成
         """
         raise NotImplementedError
 
     def run(self):
         """
-        runner method for creating feature
+        特徴量生成実行
         """
         with self.timer():
             self.create_feature()
@@ -102,7 +74,7 @@ class Feature(metaclass=ABCMeta):
     
     def save_csv(self):
         """
-        save the feature for CSV format
+        CSVへ特徴量を保存
         """
         self.feature_train = self.feature_train.reset_index(drop=True)
         self.feature_test = self.feature_test.reset_index(drop=True)
@@ -112,14 +84,14 @@ class Feature(metaclass=ABCMeta):
 
     def load_csv(self):
         """
-        load the feature from CSV format
+        CSVから特徴量を読み出し
         """
         self.feature_train = pd.read_csv(str(self.train_csv_path))
         self.feature_test = pd.read_csv(str(self.test_csv_path))
             
-    def check_csv(self):
+    def is_exist_csv(self):
         """
-        check for the csv file existence
+        CSVファイルが既に存在するかチェック
         """
         if self.train_csv_path.exists() and self.test_csv_path.exists():
             return True
@@ -128,7 +100,7 @@ class Feature(metaclass=ABCMeta):
 
     def create_memo(self, message):
         """
-        add feature memo to csv file
+        特徴量のメモを生成
         """
         file_path = self.dir + '_feature_memo.csv'
         if not os.path.exists(file_path):
@@ -140,3 +112,4 @@ class Feature(metaclass=ABCMeta):
         if name not in memo['name']:
             memo = pd.concat([memo, pd.DataFrame([[name, message]], columns=memo.columns)], axis=0)
             memo.to_csv(file_path, index=False)
+        
